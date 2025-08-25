@@ -1,0 +1,39 @@
+.calculator-page{
+    display: flex;
+    justify-content: left;
+    flex-direction: column;
+}
+.calculator-page h1{
+    padding: 20px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+.filter-container{
+    display: flex;
+    justify-content: 'left';
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-width: 100% !important;
+    width: 100vw !important;
+    padding-left: 25px !important;
+    padding-right: 25px !important;
+    gap: 20px;
+}
+
+.filter-container div{
+    min-width: 220px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+.calculate-btn{
+    background-color: #0d6efd !important;
+    color: white !important;
+    width: 130px !important;
+    margin-top: 32px !important;
+}
+.col, .row{
+    flex-shrink:unset !important;
+}
+
+.form-label{
+    color: rgb(114, 114, 114);
+}

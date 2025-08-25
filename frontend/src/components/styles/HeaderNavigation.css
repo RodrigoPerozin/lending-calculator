@@ -1,0 +1,15 @@
+header {
+    background-color: #5387bbff;
+    padding: 10px;
+    border-bottom: 1px solid #586d88ff;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+header ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 15px;
+}
