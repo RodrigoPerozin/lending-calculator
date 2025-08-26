@@ -90,7 +90,7 @@ export default function Calculator() {
     let firstPayDate = new Date(e.target.value);
     let initialDate = new Date(params.initialDate);
     let finalDate = new Date(params.finalDate);
-    if(firstPayDate < initialDate || firstPayDate > finalDate) {
+    if(firstPayDate <= initialDate || firstPayDate >= finalDate) {
       swal.fire({
         toast: true,
         position: "top-end",
@@ -113,12 +113,26 @@ export default function Calculator() {
         style: "currency",
         currency: "BRL",
       }).format(1000000000000.00);
-      setParams({...params, lendingValue: formatted});
+      setParams({...params, lendingValue: formatted, rawLendingValue: 1000000000000.00});
       swal.fire({
         toast: true,
         position: "top-end",
         icon: "warning",
         title: "Os empréstimos tem um limite de até 1 trilhão!",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    }else if(numericValue < 0.5){
+      let formatted = new Intl.NumberFormat("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      }).format(numericValue);
+      setParams({...params, lendingValue: formatted, rawLendingValue: numericValue});
+      swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "warning",
+        title: "O empréstimo precisa ser de no mínimo R% 0,50!",
         showConfirmButton: false,
         timer: 3000,
       });
@@ -170,12 +184,12 @@ export default function Calculator() {
         timer: 3000,
       });
       return;
-    }else if(parseFloat(params.lendingValue.replace(/[^\d,.-]/g, "").replace(",", ".")) == 0 || params.lendingValue == ''){
+    }else if(parseFloat(params.lendingValue.replace(/[^\d,.-]/g, "").replace(",", ".")) < 0.5 || params.lendingValue == ''){
       swal.fire({
         toast: true,
         position: "top-end",
         icon: "warning",
-        title: "Preencha o valor do empréstimo!",
+        title: "Preencha o valor do empréstimo corretamente!",
         showConfirmButton: false,
         timer: 3000,
       });
@@ -192,21 +206,25 @@ export default function Calculator() {
       return;
     }
 
-    $.post("http://localhost:3001/calculate-lending", params, function(data){
-        if(data.error){
-          swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "error",
-            title: data.error,
-            showConfirmButton: false,
-            timer: 3000,
-            target: '#calculator-page'
-          });
-        }else{
-          setData(data);
-        }
+    $.ajax({
+      url: 'http://localhost:5172/api/calculator/calculate',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(params),
+      dataType: 'json',
+    }).done(function(response) {
+      setData(response);
+      if(response.length == 0){
+        swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "info",
+          title: "Nenhum resultado encontrado para os parâmetros informados.",
+          showConfirmButton: false,
+          timer: 3000,
+        });
       }
+    }
     ).fail(function() {
       swal.fire({
         toast: true,
@@ -215,7 +233,6 @@ export default function Calculator() {
         title: "Erro ao conectar com o servidor. Tente novamente mais tarde.",
         showConfirmButton: false,
         timer: 3000,
-        target: '#calculator-page'
       });
     });
     

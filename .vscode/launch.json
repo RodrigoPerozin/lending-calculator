@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-LendingCalculatorApplication<lending-calculator>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.lendingcalculator.lending_calculator.LendingCalculatorApplication",
+            "projectName": "lending-calculator",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
