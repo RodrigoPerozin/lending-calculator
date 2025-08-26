@@ -4,3 +4,8 @@ body{
     height: 100vh !important;
     background-color: #eee;
 }
+
+.App{
+    width: 100vw;
+    height: 100vh;
+}

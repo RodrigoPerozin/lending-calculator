@@ -6,6 +6,7 @@ import { NumericFormat } from "react-number-format";
 import 'react-tooltip/dist/react-tooltip.css';
 import { Tooltip } from 'react-tooltip'
 import $ from 'jquery';
+import ResultLendingTable from '../../components/ResultLendingTable';
 
 const swal = withReactContent(Swal);
 
@@ -16,6 +17,8 @@ export default function Calculator() {
   const yyyy = now.getFullYear();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');
+
+  const [data, setData] = useState([]);
 
   const [params, setParams] = useState({
     initialDate: `${yyyy}-${mm}-${dd}`,
@@ -198,9 +201,10 @@ export default function Calculator() {
             title: data.error,
             showConfirmButton: false,
             timer: 3000,
+            target: '#calculator-page'
           });
         }else{
-          console.log(data);
+          setData(data);
         }
       }
     ).fail(function() {
@@ -211,18 +215,19 @@ export default function Calculator() {
         title: "Erro ao conectar com o servidor. Tente novamente mais tarde.",
         showConfirmButton: false,
         timer: 3000,
+        target: '#calculator-page'
       });
     });
     
   }
 
   return (
-    <div className="calculator-page">
+    <div className="calculator-page" id="calculator-page">
       <h1>Calculadora de Empréstimos</h1>
       <div className="filter-container row">
         <div className="col"> 
           <label className="form-label">Data Inicial</label>
-          <input type="date" defaultValue={params.initialDate} value={params.initialDate} onChange={handleInitialDateChange} className="form-control" />
+          <input type="date" value={params.initialDate} onChange={handleInitialDateChange} className="form-control" />
         </div>
         <div className="col"> 
           <label className="form-label">Data Final</label>
@@ -234,7 +239,7 @@ export default function Calculator() {
         </div>
         <div className="col">
           <label className="form-label">Valor do empréstimo</label>
-          <input type="text" defaultValue={140000} value={params.lendingValue} onChange={handleLendingValueChange} className="form-control" />
+          <input type="text" value={params.lendingValue} onChange={handleLendingValueChange} className="form-control" />
         </div>
         <div className="col">
           <label className="form-label">Taxa de juros</label>
@@ -249,6 +254,9 @@ export default function Calculator() {
         </div>
       </div>
       <Tooltip place="bottom" hidden={!shouldFirstPayBeDisabled} id="tooltip-universal" />
+      <div className='results-container'>
+          <ResultLendingTable data={data}/>
+      </div>
     </div>
   )
 }
