@@ -16,6 +16,9 @@ A aplicação permite ao usuário simular empréstimos, informando valores, taxa
 ## Observações finais
 
 - Não considera feriados nacionais e finais de semana como dia para pagamento, se cair em algum desses casos, o dia do pagamento cai no próximo dia útil. 
+- O dia do primeiro pagamento só pode ser dias úteis (Por motivos de processamento bancário)
+- O Dia do primeiro pagamento precisa estar dentro da data inicial e final, mas não pode ser ser na exata data inicial e final.
+- Se a primeira parcela for no último dia útil do mês, todas as outras precisam ser também respectivamente.
 
 ## Autor
 
