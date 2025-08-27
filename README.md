@@ -20,6 +20,10 @@ A aplicação permite ao usuário simular empréstimos, informando valores, taxa
 - O Dia do primeiro pagamento precisa estar dentro da data inicial e final, mas não pode ser ser na exata data inicial e final.
 - Se a primeira parcela for no último dia útil do mês, todas as outras precisam ser também respectivamente.
 
+## Preview
+
+![alt text](preview.png)
+
 ## Autor
 
 Rodrigo Destri Perozin
