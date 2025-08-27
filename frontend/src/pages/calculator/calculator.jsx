@@ -100,7 +100,7 @@ export default function Calculator() {
         timer: 3000,
       });
       return false;
-    }else if([6, 0].includes(firstPayDate.getDay())){ //0 -> domingo | 6 -> sábado
+    }else if(firstPayDate.getUTCDay() == 0 || firstPayDate.getUTCDay() == 6){ //0 -> domingo | 6 -> sábado
       swal.fire({
         toast: true,
         position: "top-end",
