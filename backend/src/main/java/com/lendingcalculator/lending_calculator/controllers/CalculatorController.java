@@ -45,7 +45,7 @@ public class CalculatorController {
         LocalDate finalDate = entryData.getLocalDateFinalDate();
         LocalDate firstPay = entryData.getLocalDateFirstPay();
         BigDecimal rawLendingValue = entryData.getRawLendingValue();
-        Long installmentNumber = ChronoUnit.MONTHS.between(initialDate, finalDate); //Number of installments based on the number of months between the initial and final period
+        Long installmentNumber = calculateInstallments(firstPay, finalDate); 
         Double dayBase = 360.0; //Fixed value
 
         if(finalDate.isBefore(initialDate) || finalDate.isEqual(initialDate)) {
@@ -91,6 +91,9 @@ public class CalculatorController {
 
             for(int m = startMonth; m <= endMonth; m++){
                 final int month = m;
+                if(year == finalDate.getYear() && month == finalDate.getMonthValue()){
+                    System.out.print('A');
+                }
                 LocalDate currentYearMonth = LocalDate.of(year, month, 1);
                 Boolean hasPayment = 
                 (
@@ -100,110 +103,123 @@ public class CalculatorController {
                 )
                 ;
 
-                if(!hasPayment){
+                if(installmentCounter <= installmentNumber){
+                    
+                    if(!hasPayment){
+    
+                        Optional<LocalDate> foundLastDay = lastDays.stream()
+                            .filter(date -> date.getYear() == year && date.getMonthValue() == month)
+                        .findFirst();
+                        RowRegister lastRegister = registersRepository.getLastRegister();
+                        Long daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), foundLastDay.get());
+                        RowRegister register = new RowRegister();
+                        register.setDateRegister(foundLastDay.get());
+                        register.setLendingValue(new BigDecimal("0.00"));
+                        register.setConsolidatedInstallment("");
+                        register.setAmortization(BigDecimal.ZERO);
+                        register.setPaid(BigDecimal.ZERO);
+                        register.setTotalInstallment(BigDecimal.ZERO);
+                        register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
+    
+                        //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
+                        Double base = (entryData.getRawTax()/100.0)+1;
+                        Double exponent = (double) daysDifferenceLastRegister / dayBase;
+                        BigDecimal factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
+                        BigDecimal result = factor.multiply(
+                            lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
+                        );
+                        register.setProvision(result.setScale(roundingScale, roundingMode));
+    
+                        register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
+                        register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
+    
+                        registersRepository.addRegister(register);
+    
+                    }else{
+    
+                        Optional<LocalDate> foundLastDay = lastDays.stream()
+                            .filter(date -> date.getYear() == year && date.getMonthValue() == month)
+                        .findFirst();
+    
+                        //Payment day
+    
+                        if( (installmentCounter == installmentNumber - 1) ){
+                            System.out.print('A');
+                        }
 
-                    Optional<LocalDate> foundLastDay = lastDays.stream()
-                        .filter(date -> date.getYear() == year && date.getMonthValue() == month)
-                    .findFirst();
-                    RowRegister lastRegister = registersRepository.getLastRegister();
-                    Long daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), foundLastDay.get());
-                    RowRegister register = new RowRegister();
-                    register.setDateRegister(foundLastDay.get());
-                    register.setLendingValue(new BigDecimal("0.00"));
-                    register.setConsolidatedInstallment("");
-                    register.setAmortization(BigDecimal.ZERO);
-                    register.setPaid(BigDecimal.ZERO);
-                    register.setTotalInstallment(BigDecimal.ZERO);
-                    register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
+                        Boolean isLastInstallment = (installmentCounter == (long) installmentNumber);
+                        Integer paymentDay = firstPay.getDayOfMonth();
+                        boolean firstPayAtLeastDay = firstPay.getDayOfMonth() == firstPay.lengthOfMonth();
+                        if(firstPayAtLeastDay){
+                            paymentDay = isLastInstallment ? finalDate.getDayOfMonth() : foundLastDay.get().getDayOfMonth();
+                        }else{
+                            paymentDay = isLastInstallment ? finalDate.getDayOfMonth() : firstPay.getDayOfMonth();
+                        }
+    
+                        RowRegister lastRegister = registersRepository.getLastRegister();
+                        LocalDate dateRegister = LocalDate.of(year, month, paymentDay);
+                        dateRegister = (isLastInstallment) ? dateRegister : adjustToNextUtilDayIfNeeded(dateRegister);
 
-                    //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
-                    Double base = (entryData.getRawTax()/100.0)+1;
-                    Double exponent = (double) daysDifferenceLastRegister / dayBase;
-                    BigDecimal factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
-                    BigDecimal result = factor.multiply(
-                        lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
-                    );
-                    register.setProvision(result.setScale(roundingScale, roundingMode));
-
-                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
-                    register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
-
-                    registersRepository.addRegister(register);
-
-                }else{
-
-                    Optional<LocalDate> foundLastDay = lastDays.stream()
-                        .filter(date -> date.getYear() == year && date.getMonthValue() == month)
-                    .findFirst();
-
-                    //Payment day
-
-                    RowRegister lastRegister = registersRepository.getLastRegister();
-                    LocalDate dateRegister = LocalDate.of(year, month, firstPay.getDayOfMonth());
-
-                    dateRegister = adjustToNextUtilDayIfNeeded(dateRegister);
-
-                    Boolean isLastInstallment = (currentYearMonth.getMonth().equals(finalDate.getMonth()) && currentYearMonth.getYear() == finalDate.getYear());
-                    if (isLastInstallment) {
-                        dateRegister = finalDate;
+                        Long daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), dateRegister);
+                        RowRegister register = new RowRegister();
+    
+                        register.setDateRegister(dateRegister);
+                        register.setLendingValue(new BigDecimal("0.00"));
+                        installmentCounter++;
+                        register.setConsolidatedInstallment(Integer.toString(installmentCounter).concat("/".concat(installmentNumber.toString())));
+                        register.setAmortization(firstRegister.getOutstanding().divide(BigDecimal.valueOf(installmentNumber), roundingScale, roundingMode));
+    
+                        //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
+                        Double base = (entryData.getRawTax()/100.0)+1;
+                        Double exponent = (double) daysDifferenceLastRegister / dayBase;
+                        BigDecimal factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
+                        BigDecimal result = factor.multiply(
+                            lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
+                        );
+                        register.setProvision(result.setScale(roundingScale, roundingMode));
+    
+                        register.setPaid(lastRegister.getAcumulated().add(register.getProvision()).setScale(roundingScale, roundingMode));
+                        register.setTotalInstallment(register.getAmortization().add(register.getPaid()).setScale(roundingScale, roundingMode));
+                        register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
+                        register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
+                        register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
+    
+                        registersRepository.addRegister(register);
+    
+                        if(isLastInstallment) break;
+    
+                        //Last day of month after payment
+    
+                        if(firstPayAtLeastDay && installmentCounter == 1){
+                            continue;
+                        }
+    
+                        lastRegister = registersRepository.getLastRegister();
+                        daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), foundLastDay.get());
+                        register = new RowRegister();
+                        register.setDateRegister(foundLastDay.get());
+                        register.setLendingValue(new BigDecimal("0.00"));
+                        register.setConsolidatedInstallment("");
+                        register.setAmortization(BigDecimal.ZERO);
+    
+                        //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
+                        base = (entryData.getRawTax()/100.0)+1;
+                        exponent = (double) daysDifferenceLastRegister / dayBase;
+                        factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
+                        result = factor.multiply(
+                            lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
+                        );
+                        register.setProvision(result.setScale(roundingScale, roundingMode));
+    
+                        register.setPaid(BigDecimal.ZERO);
+                        register.setTotalInstallment(BigDecimal.ZERO);
+                        register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
+                        register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
+                        register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
+    
+                        registersRepository.addRegister(register);
                     }
-
-                    Long daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), dateRegister);
-                    RowRegister register = new RowRegister();
-
-                    register.setDateRegister(dateRegister);
-                    register.setLendingValue(new BigDecimal("0.00"));
-                    installmentCounter++;
-                    register.setConsolidatedInstallment(Integer.toString(installmentCounter).concat("/".concat(installmentNumber.toString())));
-                    register.setAmortization(firstRegister.getOutstanding().divide(BigDecimal.valueOf(installmentNumber), roundingScale, roundingMode));
-
-                    //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
-                    Double base = (entryData.getRawTax()/100.0)+1;
-                    Double exponent = (double) daysDifferenceLastRegister / dayBase;
-                    BigDecimal factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
-                    BigDecimal result = factor.multiply(
-                        lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
-                    );
-                    register.setProvision(result.setScale(roundingScale, roundingMode));
-
-                    register.setPaid(lastRegister.getAcumulated().add(register.getProvision()).setScale(roundingScale, roundingMode));
-                    register.setTotalInstallment(register.getAmortization().add(register.getPaid()).setScale(roundingScale, roundingMode));
-                    register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
-                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
-                    register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
-
-                    registersRepository.addRegister(register);
-
-                    if(isLastInstallment) continue;
-
-                    //Last day of month after payment
-
-                    lastRegister = registersRepository.getLastRegister();
-                    daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), foundLastDay.get());
-                    register = new RowRegister();
-                    register.setDateRegister(foundLastDay.get());
-                    register.setLendingValue(new BigDecimal("0.00"));
-                    register.setConsolidatedInstallment("");
-                    register.setAmortization(BigDecimal.ZERO);
-
-                    //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
-                    base = (entryData.getRawTax()/100.0)+1;
-                    exponent = (double) daysDifferenceLastRegister / dayBase;
-                    factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
-                    result = factor.multiply(
-                        lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
-                    );
-                    register.setProvision(result.setScale(roundingScale, roundingMode));
-
-                    register.setPaid(BigDecimal.ZERO);
-                    register.setTotalInstallment(BigDecimal.ZERO);
-                    register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
-                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
-                    register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
-
-                    registersRepository.addRegister(register);
                 }
-
             }
         }
 
@@ -219,6 +235,10 @@ public class CalculatorController {
         while (!startMonth.isAfter(finalMonth)) {
             LocalDate lastDay = startMonth.atEndOfMonth();
             
+            while (lastDay.getDayOfWeek() == DayOfWeek.SATURDAY || lastDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                lastDay = lastDay.minusDays(1);
+            }
+
             if (!lastDay.isBefore(initialDate) && !lastDay.isAfter(finalDate)) {
                 lastDays.add(lastDay);
             }
@@ -226,6 +246,29 @@ public class CalculatorController {
         }
 
         return lastDays;
+    }
+
+    private static long calculateInstallments(LocalDate firstPay, LocalDate finalDate) {
+        long count = 0;
+        LocalDate current = firstPay;
+
+        boolean firstPayIsLastDay = firstPay.getDayOfMonth() == firstPay.lengthOfMonth();
+
+        while (!current.isAfter(finalDate)) {
+            count++;
+
+            if (firstPayIsLastDay) {
+                // sempre último dia do mês
+                current = current.plusMonths(1).withDayOfMonth(current.plusMonths(1).lengthOfMonth());
+            } else {
+                // mesmo dia do mês ou ajustado para o último disponível no mês
+                LocalDate nextMonth = current.plusMonths(1);
+                int day = Math.min(firstPay.getDayOfMonth(), nextMonth.lengthOfMonth());
+                current = nextMonth.withDayOfMonth(day);
+            }
+        }
+
+        return count;
     }
 
     private static Set<MonthDay> getFixedHolidays() {
