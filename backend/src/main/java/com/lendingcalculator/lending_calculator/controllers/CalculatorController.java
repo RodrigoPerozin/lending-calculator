@@ -140,12 +140,11 @@ public class CalculatorController {
                         Optional<LocalDate> foundLastDay = lastDays.stream()
                             .filter(date -> date.getYear() == year && date.getMonthValue() == month)
                         .findFirst();
+
+                        RowRegister lastRegister = registersRepository.getLastRegister();
+                        LocalDate nextInstallment = lastRegister.getDateRegister().plusMonths(1);
     
                         //Payment day
-    
-                        if( (installmentCounter == installmentNumber - 1) ){
-                            System.out.print('A');
-                        }
 
                         Boolean isLastInstallment = (installmentCounter == (long) installmentNumber);
                         Integer paymentDay = firstPay.getDayOfMonth();
@@ -156,9 +155,14 @@ public class CalculatorController {
                             paymentDay = isLastInstallment ? finalDate.getDayOfMonth() : firstPay.getDayOfMonth();
                         }
     
-                        RowRegister lastRegister = registersRepository.getLastRegister();
+
                         LocalDate dateRegister = LocalDate.of(year, month, paymentDay);
                         dateRegister = (isLastInstallment) ? dateRegister : adjustToNextUtilDayIfNeeded(dateRegister);
+
+                        if (nextInstallment.isAfter(finalDate) || nextInstallment.equals(finalDate)) {
+                            dateRegister = finalDate;
+                        }
+
 
                         Long daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), dateRegister);
                         RowRegister register = new RowRegister();
@@ -186,7 +190,7 @@ public class CalculatorController {
     
                         registersRepository.addRegister(register);
     
-                        if(isLastInstallment) break;
+                        if(isLastInstallment || dateRegister.equals(finalDate)) break;
     
                         //Last day of month after payment
     
@@ -249,26 +253,11 @@ public class CalculatorController {
     }
 
     private static long calculateInstallments(LocalDate firstPay, LocalDate finalDate) {
-        long count = 0;
-        LocalDate current = firstPay;
-
-        boolean firstPayIsLastDay = firstPay.getDayOfMonth() == firstPay.lengthOfMonth();
-
-        while (!current.isAfter(finalDate)) {
-            count++;
-
-            if (firstPayIsLastDay) {
-                // sempre último dia do mês
-                current = current.plusMonths(1).withDayOfMonth(current.plusMonths(1).lengthOfMonth());
-            } else {
-                // mesmo dia do mês ou ajustado para o último disponível no mês
-                LocalDate nextMonth = current.plusMonths(1);
-                int day = Math.min(firstPay.getDayOfMonth(), nextMonth.lengthOfMonth());
-                current = nextMonth.withDayOfMonth(day);
-            }
-        }
-
-        return count;
+        long monthsBetween = ChronoUnit.MONTHS.between(
+            firstPay.withDayOfMonth(1), 
+            finalDate.withDayOfMonth(1)
+        );
+        return monthsBetween + 1;
     }
 
     private static Set<MonthDay> getFixedHolidays() {
