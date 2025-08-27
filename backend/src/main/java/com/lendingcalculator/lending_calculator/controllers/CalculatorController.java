@@ -91,9 +91,7 @@ public class CalculatorController {
 
             for(int m = startMonth; m <= endMonth; m++){
                 final int month = m;
-                if(year == finalDate.getYear() && month == finalDate.getMonthValue()){
-                    System.out.print('A');
-                }
+                
                 LocalDate currentYearMonth = LocalDate.of(year, month, 1);
                 Boolean hasPayment = 
                 (
@@ -145,6 +143,7 @@ public class CalculatorController {
                         LocalDate nextInstallment = lastRegister.getDateRegister().plusMonths(1);
     
                         //Payment day
+                        installmentCounter++;
 
                         Boolean isLastInstallment = (installmentCounter == (long) installmentNumber);
                         Integer paymentDay = firstPay.getDayOfMonth();
@@ -153,8 +152,11 @@ public class CalculatorController {
                             paymentDay = isLastInstallment ? finalDate.getDayOfMonth() : foundLastDay.get().getDayOfMonth();
                         }else{
                             paymentDay = isLastInstallment ? finalDate.getDayOfMonth() : firstPay.getDayOfMonth();
+                            
+                            if(LocalDate.of(year, month, 1).lengthOfMonth() < firstPay.getDayOfMonth()){
+                                paymentDay = LocalDate.of(year, month, 1).lengthOfMonth();
+                            }
                         }
-    
 
                         LocalDate dateRegister = LocalDate.of(year, month, paymentDay);
                         dateRegister = (isLastInstallment) ? dateRegister : adjustToNextUtilDayIfNeeded(dateRegister);
@@ -169,7 +171,6 @@ public class CalculatorController {
     
                         register.setDateRegister(dateRegister);
                         register.setLendingValue(new BigDecimal("0.00"));
-                        installmentCounter++;
                         register.setConsolidatedInstallment(Integer.toString(installmentCounter).concat("/".concat(installmentNumber.toString())));
                         register.setAmortization(firstRegister.getOutstanding().divide(BigDecimal.valueOf(installmentNumber), roundingScale, roundingMode));
     
@@ -273,7 +274,7 @@ public class CalculatorController {
         return holiday;
     }
 
-    private static boolean isWekeend(LocalDate date) { //I'm blinding in the lights
+    private static boolean isWeekend(LocalDate date) { //I'm blinding in the lights
         DayOfWeek weekDay = date.getDayOfWeek();
         return weekDay == DayOfWeek.SATURDAY || weekDay == DayOfWeek.SUNDAY;
     }
@@ -282,11 +283,29 @@ public class CalculatorController {
         Set<MonthDay> fixedHolidays = getFixedHolidays();
 
         LocalDate adjusted = data;
-        while (isWekeend(adjusted) || fixedHolidays.contains(MonthDay.from(adjusted))) {
-            adjusted = adjusted.plusDays(1);
+
+        if (!isWeekend(adjusted) && !fixedHolidays.contains(MonthDay.from(adjusted))) {
+            return adjusted;
         }
 
-        return adjusted;
+        LocalDate nextDay = adjusted.plusDays(1);
+        if (nextDay.getMonth() == adjusted.getMonth()) {
+            while ((isWeekend(nextDay) || fixedHolidays.contains(MonthDay.from(nextDay))) && 
+                nextDay.getMonth() == adjusted.getMonth()) {
+                nextDay = nextDay.plusDays(1);
+            }
+            if (nextDay.getMonth() == adjusted.getMonth() && 
+                !isWeekend(nextDay) && !fixedHolidays.contains(MonthDay.from(nextDay))) {
+                return nextDay;
+            }
+        }
+
+        LocalDate previousDay = adjusted.minusDays(1);
+        while (isWeekend(previousDay) || fixedHolidays.contains(MonthDay.from(previousDay))) {
+            previousDay = previousDay.minusDays(1);
+        }
+        
+        return previousDay;
     }
     
 }
