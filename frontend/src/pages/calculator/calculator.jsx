@@ -29,7 +29,7 @@ export default function Calculator() {
     tax: '0%',
     rawTax: 0.0
   });
-  console.log(params.rawTax);
+
   const handleInitialDateChange = (e) => {
     let initialDate = new Date(e.target.value);
     let finalDate = new Date(params.finalDate);

@@ -1,47 +1,62 @@
-export default function ResultLendingTable(props) {
-    const data = props?.data || [];
+function formatRegisters(data) {
+  return data.map(item => ({
+    ...item,
+    dateRegister: new Date(item.dateRegister).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+    lendingValue: item.lendingValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    outstandingBalance: item.outstandingBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    consolidatedInstallment: item.consolidatedInstallment.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    totalInstallment: item.totalInstallment.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    amortization: item.amortization.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    outstanding: item.outstanding.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    provision: item.provision.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    acumulated: item.acumulated.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    paid: item.paid.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+  }));
+}
 
+export default function ResultLendingTable(props) {
+    const data = formatRegisters(props?.data || []);
   return (
     <table className="table table-striped">
-      <thead>  
+      <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>  
         <tr>
             <th scope="col" colSpan={3} className="text-center border-2">Empréstimo</th>
             <th scope="col" colSpan={2} className="text-center border-2">Parcela</th>
             <th scope="col" colSpan={2} className="text-center border-2">Principal</th>
             <th scope="col" colSpan={3} className="text-center border-2">Juros</th>
         </tr>
+        <tr>
+            <th scope="row" className="text-center border-2">Data Competência</th>
+            <th scope="row" className="text-center border-2">Valor de Empréstimo</th>
+            <th scope="row" className="text-center border-2">Saldo Devedor</th>
+
+            <th scope="row" className="text-center border-2">Consolidada</th>
+            <th scope="row" className="text-center border-2">Total</th>
+
+            <th scope="row" className="text-center border-2">Amortização</th>
+            <th scope="row" className="text-center border-2">Saldo</th>
+
+            <th scope="row" className="text-center border-2">Provisão</th>
+            <th scope="row" className="text-center border-2">Acumulado</th>
+            <th scope="row" className="text-center border-2">Pago</th>
+          </tr>
         </thead>
         <tbody>
-          <tr>
-            <td scope="row" className="text-center border-2 th">Data Competência</td>
-            <td scope="row" className="text-center border-2 th">Valor de Empréstimo</td>
-            <td scope="row" className="text-center border-2 th">Saldo Devedor</td>
-
-            <td scope="row" className="text-center border-2 th">Consolidada</td>
-            <td scope="row" className="text-center border-2 th">Total</td>
-
-            <td scope="row" className="text-center border-2 th">Amortização</td>
-            <td scope="row" className="text-center border-2 th">Saldo</td>
-
-            <td scope="row" className="text-center border-2 th">Provisão</td>
-            <td scope="row" className="text-center border-2 th">Acumulado</td>
-            <td scope="row" className="text-center border-2 th">Pago</td>
-          </tr>
           {data && data?.length > 0 ? data?.map((item, index) => (
             <tr key={index}>
-              <td className="text-center border-2">{item.competenceDate}</td>
+              <td className="text-center border-2">{item.dateRegister}</td>
               <td className="text-center border-2">{item.lendingValue}</td>
-              <td className="text-center border-2">{item.debtBalance}</td>
+              <td className="text-center border-2">{item.outstandingBalance}</td>
 
-              <td className="text-center border-2">{item.installmentConsolidated}</td>
-              <td className="text-center border-2">{item.installmentTotal}</td>
+              <td className="text-center border-2">{item.consolidatedInstallment}</td>
+              <td className="text-center border-2">{item.totalInstallment}</td>
 
               <td className="text-center border-2">{item.amortization}</td>
-              <td className="text-center border-2">{item.amortizationBalance}</td>
+              <td className="text-center border-2">{item.outstanding}</td>
 
               <td className="text-center border-2">{item.provision}</td>
-              <td className="text-center border-2">{item.provisionAccumulated}</td>
-              <td className="text-center border-2">{item.provisionPaid}</td>
+              <td className="text-center border-2">{item.acumulated}</td>
+              <td className="text-center border-2">{item.paid}</td>
             </tr>
           )) : (
             <tr>

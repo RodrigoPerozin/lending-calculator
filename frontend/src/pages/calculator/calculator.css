@@ -48,9 +48,13 @@
 .results-container{
     margin: 20px;
     height: 100%;
+    overflow-y: scroll;
 }
 
 table th, td.th{
     background-color: #3078AD !important;
     color: white !important;
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
