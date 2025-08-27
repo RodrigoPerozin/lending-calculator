@@ -100,6 +100,16 @@ export default function Calculator() {
         timer: 3000,
       });
       return false;
+    }else if([6, 0].includes(firstPayDate.getDay())){ //0 -> domingo | 6 -> sábado
+      swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "warning",
+        title: "O primeiro pagamento deve ser um dia útil!",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+      return false;
     }else{
       setParams({...params, firstPay: e.target.value});
     }
