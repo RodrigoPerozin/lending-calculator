@@ -2,15 +2,15 @@ function formatRegisters(data) {
   return data.map(item => ({
     ...item,
     dateRegister: new Date(item.dateRegister).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
-    lendingValue: item.lendingValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    outstandingBalance: item.outstandingBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    lendingValue: Math.abs(item.lendingValue).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    outstandingBalance: Math.abs(item.outstandingBalance).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
     consolidatedInstallment: item.consolidatedInstallment.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    totalInstallment: item.totalInstallment.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    amortization: item.amortization.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    outstanding: item.outstanding.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    provision: item.provision.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    acumulated: item.acumulated.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-    paid: item.paid.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    totalInstallment: Math.abs(item.totalInstallment).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    amortization: Math.abs(item.amortization).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    outstanding: Math.abs(item.outstanding).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    provision: Math.abs(item.provision).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    acumulated: Math.abs(item.acumulated).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+    paid: Math.abs(item.paid).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
   }));
 }
 
@@ -18,7 +18,7 @@ export default function ResultLendingTable(props) {
     const data = formatRegisters(props?.data || []);
   return (
     <table className="table table-striped">
-      <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>  
+      <thead id="thead" style={{ position: "sticky", top: 0, zIndex: 1 }}>  
         <tr>
             <th scope="col" colSpan={3} className="text-center border-2">Empréstimo</th>
             <th scope="col" colSpan={2} className="text-center border-2">Parcela</th>

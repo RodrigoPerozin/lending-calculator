@@ -64,7 +64,7 @@ public class CalculatorController {
 
         Integer roundingScale = 4;
         RoundingMode roundingMode = RoundingMode.HALF_DOWN;
-        
+
         RowRegister firstRegister = new RowRegister();
         firstRegister.setDateRegister(initialDate);
         firstRegister.setLendingValue(rawLendingValue);
@@ -114,18 +114,18 @@ public class CalculatorController {
                     register.setAmortization(BigDecimal.ZERO);
                     register.setPaid(BigDecimal.ZERO);
                     register.setTotalInstallment(BigDecimal.ZERO);
-                    register.setOutstanding(lastRegister.getOutstanding().add(register.getAmortization()).setScale(roundingScale, roundingMode));
+                    register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
 
                     //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
-                    Double base = (entryData.getRawTax()/100)+1;
-                    Double exponent = daysDifferenceLastRegister / dayBase;
+                    Double base = (entryData.getRawTax()/100.0)+1;
+                    Double exponent = (double) daysDifferenceLastRegister / dayBase;
                     BigDecimal factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
                     BigDecimal result = factor.multiply(
                         lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
                     );
                     register.setProvision(result.setScale(roundingScale, roundingMode));
 
-                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid(), MathContext.UNLIMITED).setScale(roundingScale, roundingMode));
+                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
                     register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
 
                     registersRepository.addRegister(register);
@@ -141,8 +141,12 @@ public class CalculatorController {
                     RowRegister lastRegister = registersRepository.getLastRegister();
                     LocalDate dateRegister = LocalDate.of(year, month, firstPay.getDayOfMonth());
 
+                    dateRegister = adjustToNextUtilDayIfNeeded(dateRegister);
+
                     Boolean isLastInstallment = (currentYearMonth.getMonth().equals(finalDate.getMonth()) && currentYearMonth.getYear() == finalDate.getYear());
-                    if (isLastInstallment) dateRegister = finalDate;
+                    if (isLastInstallment) {
+                        dateRegister = finalDate;
+                    }
 
                     Long daysDifferenceLastRegister = ChronoUnit.DAYS.between(lastRegister.getDateRegister(), dateRegister);
                     RowRegister register = new RowRegister();
@@ -154,8 +158,8 @@ public class CalculatorController {
                     register.setAmortization(firstRegister.getOutstanding().divide(BigDecimal.valueOf(installmentNumber), roundingScale, roundingMode));
 
                     //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
-                    Double base = (entryData.getRawTax()/100)+1;
-                    Double exponent = daysDifferenceLastRegister / dayBase;
+                    Double base = (entryData.getRawTax()/100.0)+1;
+                    Double exponent = (double) daysDifferenceLastRegister / dayBase;
                     BigDecimal factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
                     BigDecimal result = factor.multiply(
                         lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
@@ -165,7 +169,7 @@ public class CalculatorController {
                     register.setPaid(lastRegister.getAcumulated().add(register.getProvision()).setScale(roundingScale, roundingMode));
                     register.setTotalInstallment(register.getAmortization().add(register.getPaid()).setScale(roundingScale, roundingMode));
                     register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
-                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid(), MathContext.UNLIMITED).setScale(roundingScale, roundingMode));
+                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
                     register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
 
                     registersRepository.addRegister(register);
@@ -183,8 +187,8 @@ public class CalculatorController {
                     register.setAmortization(BigDecimal.ZERO);
 
                     //=((($E$2+1)^((A7-A6)/$F$2))-1)*(G6+I6)
-                    base = (entryData.getRawTax()/100)+1;
-                    exponent = daysDifferenceLastRegister / dayBase;
+                    base = (entryData.getRawTax()/100.0)+1;
+                    exponent = (double) daysDifferenceLastRegister / dayBase;
                     factor = BigDecimal.valueOf(Math.pow(base, exponent)).subtract(BigDecimal.ONE);
                     result = factor.multiply(
                         lastRegister.getOutstanding().add(lastRegister.getAcumulated()).setScale(roundingScale, roundingMode)
@@ -193,8 +197,8 @@ public class CalculatorController {
 
                     register.setPaid(BigDecimal.ZERO);
                     register.setTotalInstallment(BigDecimal.ZERO);
-                    register.setOutstanding(lastRegister.getOutstanding().add(register.getAmortization()).setScale(roundingScale, roundingMode));
-                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid(), MathContext.UNLIMITED ).setScale(roundingScale, roundingMode));
+                    register.setOutstanding(lastRegister.getOutstanding().subtract(register.getAmortization()).setScale(roundingScale, roundingMode));
+                    register.setAcumulated((lastRegister.getAcumulated().add(register.getProvision())).subtract(register.getPaid()).setScale(roundingScale, roundingMode));
                     register.setOutstandingBalance(register.getOutstanding().add(register.getAcumulated()).setScale(roundingScale, roundingMode));
 
                     registersRepository.addRegister(register);
@@ -240,6 +244,17 @@ public class CalculatorController {
     private static boolean isWekeend(LocalDate date) { //I'm blinding in the lights
         DayOfWeek weekDay = date.getDayOfWeek();
         return weekDay == DayOfWeek.SATURDAY || weekDay == DayOfWeek.SUNDAY;
+    }
+
+    private static LocalDate adjustToNextUtilDayIfNeeded(LocalDate data) {
+        Set<MonthDay> fixedHolidays = getFixedHolidays();
+
+        LocalDate adjusted = data;
+        while (isWekeend(adjusted) || fixedHolidays.contains(MonthDay.from(adjusted))) {
+            adjusted = adjusted.plusDays(1);
+        }
+
+        return adjusted;
     }
     
 }

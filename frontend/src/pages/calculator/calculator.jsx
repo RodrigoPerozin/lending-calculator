@@ -214,6 +214,7 @@ export default function Calculator() {
       dataType: 'json',
     }).done(function(response) {
       setData(response);
+      document.querySelector(".results-container").scrollTop = 0;
       if(response.length == 0){
         swal.fire({
           toast: true,
