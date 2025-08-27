@@ -63,9 +63,8 @@ public class CalculatorController {
         }
 
         Integer roundingScale = 4;
-         RoundingMode roundingMode = RoundingMode.HALF_DOWN;
-
-        System.out.println(roundingMode);
+        RoundingMode roundingMode = RoundingMode.HALF_DOWN;
+        
         RowRegister firstRegister = new RowRegister();
         firstRegister.setDateRegister(initialDate);
         firstRegister.setLendingValue(rawLendingValue);
